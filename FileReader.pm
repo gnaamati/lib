@@ -1,5 +1,5 @@
 ###======================================== 
-#A set of subroutines for file handlind and parsing
+#A set of subroutines for file/api handlind and parsing 
 ###======================================== 
 package FileReader;
 require Exporter;
