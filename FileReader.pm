@@ -5,19 +5,20 @@ package FileReader;
 require Exporter;
 # symbols to export on request
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(slurp slurp_and_chomp read_file write_file file2hash file2hash_tab hash2file_tab hash2file shift_first get_files_from_dir line2hash line2hash_comma slurp_excel get_slice_adaptor);  
+@EXPORT_OK = qw(slurp slurp_and_chomp read_file write_file file2hash file2hash_tab hash2file_tab hash2file shift_first get_files_from_dir line2hash line2hash_comma slurp_excel get_slice_adaptor get_gene_adaptor);  
 use strict;
 use warnings;
 use DirHandle;
 use Carp qw(croak);
 use Data::Dumper;
+use Bio::EnsEMBL::Registry;
 #use Spreadsheet::ParseExcel;
 
 ##Slurps a file into a list
 sub slurp {
     my ($file) = @_;
     my (@data, @data_chomped); 
-    open IN, "<", $file or die "can't open $file\n";
+    open IN, "<", $file or croak "can't open $file\n";
     @data = <IN>;
     for my $line (@data){
         chomp($line);
@@ -179,58 +180,79 @@ sub line2hash_comma {
     return $hash;
 }
 
-=comment
-##Returns an Excel file as a list of tab delimited lines
-sub slurp_excel {
-    my ($file) = @_;
-    
-    my $parser   = Spreadsheet::ParseExcel->new();
-    my $workbook = $parser->parse($file);
+#==================API subs========================
 
-    if ( !defined $workbook ) {
-        die $parser->error(), ".\n";
-    }
-
-    my @lines;
-    for my $worksheet ( $workbook->worksheets() ) {
-        my ( $row_min, $row_max ) = $worksheet->row_range();
-        my ( $col_min, $col_max ) = $worksheet->col_range();
-
-        for my $row ( $row_min .. $row_max ) {
-            my @line;
-            for my $col ( $col_min .. $col_max ) {
-                my $cell = $worksheet->get_cell( $row, $col );
-                if (not defined $cell){
-                    push(@line, '');
-                }
-                next unless $cell;
-                
-                my $val = $cell->value();
-                push (@line, $val);
-            }
-            my $line = join("\t", @line);
-            push (@lines, $line);
-        }
-    }
-    return (@lines);
+#========================================
+sub get_gene_adaptor {
+#========================================
+    my ($reg_file, $species) = @_;
+    my $gene_adaptor = _get_adaptor($reg_file, $species, 'Gene');
+    return $gene_adaptor;
 }
-=cut
 
 #========================================
 sub get_slice_adaptor {
 #========================================
     my ($reg_file, $species) = @_;
-    #if (!$reg_file){
-    #    $reg_file = '/homes/gnaamati/registries/prod3_gn.reg'    
-    #}
-    #if ($species){
-    #    $species = 'triticum_aestivum';
-    #}
-    
-    Bio::EnsEMBL::Registry->load_all($reg_file);
-    my $slice_adaptor = Bio::EnsEMBL::Registry->get_adaptor($species, 'Core', 'Slice');
+    my $slice_adaptor = _get_adaptor($reg_file, $species, 'Slice');
     return $slice_adaptor;
 }
+
+#========================================
+sub _get_adaptor {
+#========================================
+    my ($reg_file, $species,$type) = @_;
+    if (!$reg_file or !$species){
+        croak('Registry file and/or species are missing');
+    }
+
+    my $registry = 'Bio::EnsEMBL::Registry';
+    $registry->load_all($reg_file);
+
+    my $adaptor = Bio::EnsEMBL::Registry->get_adaptor($species,'Core',$type);
+    if (!$adaptor){
+        croak('Adaptor not created');
+    }
+    return $adaptor;
+}
+
+
+##Returns an Excel file as a list of tab delimited lines
+#======================================== 
+#sub slurp_excel {
+#======================================== 
+    #my ($file) = @_;
+    
+    #my $parser   = Spreadsheet::ParseExcel->new();
+    #my $workbook = $parser->parse($file);
+
+    #if ( !defined $workbook ) {
+        #die $parser->error(), ".\n";
+    #}
+
+    #my @lines;
+    #for my $worksheet ( $workbook->worksheets() ) {
+        #my ( $row_min, $row_max ) = $worksheet->row_range();
+        #my ( $col_min, $col_max ) = $worksheet->col_range();
+
+        #for my $row ( $row_min .. $row_max ) {
+            #my @line;
+            #for my $col ( $col_min .. $col_max ) {
+                #my $cell = $worksheet->get_cell( $row, $col );
+                #if (not defined $cell){
+                    #push(@line, '');
+                #}
+                #next unless $cell;
+                
+                #my $val = $cell->value();
+                #push (@line, $val);
+            #}
+            #my $line = join("\t", @line);
+            #push (@lines, $line);
+        #}
+    #}
+    #return (@lines);
+#}
 
 
 =pod
@@ -301,9 +323,23 @@ Utils::FileReader;
 
     Parses an Excel file and returns the data as a list of tab delimited lines
 
+=item get_slice_adaptor ($reg_file, $species)
+
+    Create a slice adaptor according to the species and registry
+
+=item get_gene_adaptor ($reg_file, $species)
+
+    Create a slice adaptor according to the species and registry
+
+
+
 =back
 
 =head1 AUTHOR
 
 Guy Naamati
+
+
+
+
 
