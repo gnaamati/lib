@@ -52,6 +52,45 @@ sub shift_first {
     return ($first);
 }
 
+##Splits a line and parses it into the hash according to given headers
+sub line2hash {
+    my ($header, $line) = @_;
+
+    ##Split header fields and line fields
+    my @header_fields = split (/\t/, $header);
+    my @line_fields   = split (/\t/, $line);
+
+    ##Fill the hash
+    my $hash = {};
+    my $i = 0;
+    for my $fld (@header_fields){
+        $fld =~ s/\s/_/g;
+        $hash->{lc($fld)} = $line_fields[$i];
+        $i++;
+    }
+
+    return $hash;
+}
+
+##Splits a line and parses it into the hash according to given headers (comma delimited)
+sub line2hash_comma {
+    my ($header, $line) = @_;
+
+    ##Split header fields and line fields
+    my @header_fields = split (/,/, $header);
+    my @line_fields   = split (/,/, $line);
+
+    ##Fill the hash
+    my $hash = {};
+    my $i = 0;
+    for my $fld (@header_fields){
+        $hash->{lc($fld)} = $line_fields[$i];
+        $i++;
+    }
+
+    return $hash;
+}
+
 ##Parses the lines of a file into a hash
 ##Each key gets a value of 1
 sub file2hash {
@@ -141,44 +180,7 @@ sub get_files_from_dir {
     return @dir_files;
 }
 
-##Splits a line and parses it into the hash according to given headers
-sub line2hash {
-    my ($header, $line) = @_;
 
-    ##Split header fields and line fields
-    my @header_fields = split (/\t/, $header);
-    my @line_fields   = split (/\t/, $line);
-
-    ##Fill the hash
-    my $hash = {};
-    my $i = 0;
-    for my $fld (@header_fields){
-        $fld =~ s/\s/_/g;
-        $hash->{lc($fld)} = $line_fields[$i];
-        $i++;
-    }
-
-    return $hash;
-}
-
-##Splits a line and parses it into the hash according to given headers (comma delimited)
-sub line2hash_comma {
-    my ($header, $line) = @_;
-
-    ##Split header fields and line fields
-    my @header_fields = split (/,/, $header);
-    my @line_fields   = split (/,/, $line);
-
-    ##Fill the hash
-    my $hash = {};
-    my $i = 0;
-    for my $fld (@header_fields){
-        $hash->{lc($fld)} = $line_fields[$i];
-        $i++;
-    }
-
-    return $hash;
-}
 
 #==================API subs========================
 
